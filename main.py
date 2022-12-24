@@ -11,6 +11,11 @@ class GestureSuit(Enum):
     SCISSOR = "scissor"
 
 
+class GameMode(Enum):
+    KILL = "kill"
+    TRANSFORM = "transform"
+
+
 class Gesture:
     SUIT_TO_EMOJI = {
         GestureSuit.ROCK: "🪨",
@@ -42,9 +47,17 @@ class Gesture:
         self.alive = False
         self.cell = None
 
+    def transform(self, suit: GestureSuit):
+        self.suit = suit
+
 
 class Cell:
-    def __init__(self, gesture: Gesture | None = None):
+    GAME_MODE_TO_FUNCTION_NAME = {
+        item: f"_challenge_{item.value}" for item in GameMode
+    }
+
+    def __init__(self, game: "RockPaperScissor", gesture: Gesture | None = None):
+        self.game = game
         self.m = None  # y coordinate
         self.n = None  # x coordinate
 
@@ -57,6 +70,10 @@ class Cell:
     def _is_empty(self):
         return self.gesture is None
 
+    @property
+    def stats(self):
+        return self.game.stats
+
     def _assign_gesture(self, gesture: Gesture):
         self.gesture = gesture
         self.gesture.cell = self
@@ -65,18 +82,39 @@ class Cell:
         self.gesture.cell = None
         self.gesture = None
 
-    def run_challenge(self, incoming: Gesture, stats: dict):
-        if not self.gesture:
-            self._assign_gesture(incoming)
+    def _challenge_kill(self, incoming: Gesture):
+        incoming.cell.remove_gesture()
 
-        elif self.gesture > incoming:
+        if self.gesture > incoming:
             incoming.kill()
-            stats[f"remaining_{incoming.suit.value}"] -= 1
+            self.stats[f"remaining_{incoming.suit.value}"] -= 1
 
         else:
             self.gesture.kill()
-            stats[f"remaining_{self.gesture.suit.value}"] -= 1
+            self.stats[f"remaining_{self.gesture.suit.value}"] -= 1
             self._assign_gesture(incoming)
+
+    def _challenge_transform(self, incoming: Gesture):
+        if self.gesture > incoming:
+            self.stats[f"remaining_{incoming.suit.value}"] -= 1
+            incoming.transform(self.gesture.suit)
+            self.stats[f"remaining_{self.gesture.suit.value}"] += 1
+
+        else:
+            self.stats[f"remaining_{self.gesture.suit.value}"] -= 1
+            self.gesture.transform(incoming.suit)
+            self.stats[f"remaining_{incoming.suit.value}"] += 1
+
+    def _get_challenge_function(self):
+        return getattr(self, self.GAME_MODE_TO_FUNCTION_NAME[self.game.GAME_MODE])
+
+    def run_challenge(self, incoming: Gesture):
+        if not self.gesture:
+            incoming.cell.remove_gesture()
+            self._assign_gesture(incoming)
+        else:
+            challenge_function = self._get_challenge_function()
+            challenge_function(incoming)
 
     def __str__(self) -> str:
         if self._is_empty:
@@ -89,9 +127,10 @@ class RockPaperScissor:
         self,
         height: int = 15,
         width: int = 15,
-        count_rock: int = 30,
-        count_paper: int = 30,
-        count_scissor: int = 30,
+        count_rock: int = 50,
+        count_paper: int = 50,
+        count_scissor: int = 50,
+        game_mode: GameMode = GameMode.KILL,
     ):
         self.M = height
         self.N = width
@@ -102,6 +141,7 @@ class RockPaperScissor:
         self.COUNT_SCISSOR = count_scissor
         self.COUNT_GESTURES = self.COUNT_ROCK + self.COUNT_PAPER + self.COUNT_SCISSOR
 
+        self.GAME_MODE = game_mode
         self.gestures: list[Gesture] = []
         self._init_gestures()
 
@@ -125,8 +165,8 @@ class RockPaperScissor:
         ]
 
     def _init_matrix(self):
-        cells = [Cell(gesture) for gesture in self.gestures]
-        cells += [Cell() for _ in range(self.COUNT_CELLS - self.COUNT_GESTURES)]
+        cells = [Cell(self, gesture) for gesture in self.gestures]
+        cells += [Cell(self) for _ in range(self.COUNT_CELLS - self.COUNT_GESTURES)]
         random.shuffle(cells)
 
         self.matrix = []
@@ -167,9 +207,8 @@ class RockPaperScissor:
         if not surrounding_cells:
             return
 
-        gesture.cell.remove_gesture()
         new_cell = random.choice(surrounding_cells)
-        new_cell.run_challenge(gesture, self.stats)
+        new_cell.run_challenge(gesture)
 
     def _remove_not_alive_gestures(self):
         self.gestures = [g for g in self.gestures if g.alive]
@@ -206,6 +245,7 @@ class RockPaperScissor:
 [    Rock-Paper-Scissor   ]
 [=========================]
 
+Mode: {self.GAME_MODE.value.title()}
 Round: {self.stats["round_number"] or "-":<4}
 {GestureSuit.ROCK.value.title()}: {self.stats[f"remaining_{GestureSuit.ROCK.value}"]:<3}   {GestureSuit.PAPER.value.title()}: {self.stats[f"remaining_{GestureSuit.PAPER.value}"]:<3}   {GestureSuit.SCISSOR.value.title()}: {self.stats[f"remaining_{GestureSuit.SCISSOR.value}"]:<3}
         """)
@@ -234,7 +274,7 @@ Round: {self.stats["round_number"] or "-":<4}
             if self.is_game_over:
                 break
 
-            sleep(0.1)
+            sleep(0.2)
 
         print(f"""
 The winner is {self.get_winning_suit().value.title()}!!!
@@ -242,9 +282,9 @@ The winner is {self.get_winning_suit().value.title()}!!!
 
 
 if __name__ == "__main__":
-    game = RockPaperScissor()
+    rps_game = RockPaperScissor(game_mode=GameMode.TRANSFORM)
 
     try:
-        game.play()
+        rps_game.play()
     except KeyboardInterrupt:
         pass
