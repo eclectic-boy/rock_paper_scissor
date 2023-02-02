@@ -109,7 +109,7 @@ class Cell:
         return getattr(self, self.GAME_MODE_TO_FUNCTION_NAME[self.game.GAME_MODE])
 
     def run_challenge(self, incoming: Gesture):
-        if not self.gesture:
+        if self._is_empty:
             incoming.cell.remove_gesture()
             self._assign_gesture(incoming)
         else:
