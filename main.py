@@ -1,5 +1,6 @@
 import os
 import random
+import sys
 from enum import Enum
 from time import sleep
 from typing import Self
@@ -40,7 +41,7 @@ class Gesture:
     def __gt__(self, other: Self):
         return self.SUIT_TO_WEAKER_SUIT[self.suit] == other.suit
 
-    def __eq__(self, other: Self):
+    def equals(self, other: Self):
         return self.suit == other.suit
 
     def kill(self):
@@ -130,7 +131,8 @@ class RockPaperScissor:
         count_rock: int = 50,
         count_paper: int = 50,
         count_scissor: int = 50,
-        game_mode: GameMode = GameMode.KILL,
+        game_mode: GameMode = GameMode.TRANSFORM,
+        round_delay: float = 0.2,
     ):
         self.M = height
         self.N = width
@@ -140,6 +142,8 @@ class RockPaperScissor:
         self.COUNT_PAPER = count_paper
         self.COUNT_SCISSOR = count_scissor
         self.COUNT_GESTURES = self.COUNT_ROCK + self.COUNT_PAPER + self.COUNT_SCISSOR
+
+        self.ROUND_DELAY = round_delay
 
         self.GAME_MODE = game_mode
         self.gestures: list[Gesture] = []
@@ -198,7 +202,7 @@ class RockPaperScissor:
     def _get_available_cells_to_move_to(self, gesture: Gesture):
         all_surrounding_cells = self._get_all_surrounding_cells(gesture.cell)
         filtered_cells = [
-            c for c in all_surrounding_cells if not c.gesture or c.gesture != gesture
+            c for c in all_surrounding_cells if not c.gesture or not c.gesture.equals(gesture)
         ]
         return filtered_cells
 
@@ -240,7 +244,7 @@ class RockPaperScissor:
 
     def _print_board(self):
         self._clear_screen()
-        print(f"""
+        sys.stdout.write(f"""
 [=========================]
 [    Rock-Paper-Scissor   ]
 [=========================]
@@ -248,12 +252,12 @@ class RockPaperScissor:
 Mode: {self.GAME_MODE.value.title()}
 Round: {self.stats["round_number"] or "-":<4}
 {GestureSuit.ROCK.value.title()}: {self.stats[f"remaining_{GestureSuit.ROCK.value}"]:<3}   {GestureSuit.PAPER.value.title()}: {self.stats[f"remaining_{GestureSuit.PAPER.value}"]:<3}   {GestureSuit.SCISSOR.value.title()}: {self.stats[f"remaining_{GestureSuit.SCISSOR.value}"]:<3}
-        """)
+        \n""")
 
         for row in self.matrix:
-            print("|" + "·".join(f"{str(cell):^0}" for cell in row) + "|")
+            sys.stdout.write("|" + "·".join(f"{str(cell):^0}" for cell in row) + "|\n")
 
-        print()
+        sys.stdout.write("\n")
 
     @property
     def is_game_over(self) -> bool:
@@ -262,6 +266,9 @@ Round: {self.stats["round_number"] or "-":<4}
         return len(greater_than_zero_counts) == 1
 
     def get_winning_suit(self):
+        if not self.is_game_over:
+            raise Exception("The game is not over yet")
+
         for suite in GestureSuit:
             if self.stats[f"remaining_{suite.value}"]:
                 return suite
@@ -274,17 +281,17 @@ Round: {self.stats["round_number"] or "-":<4}
             if self.is_game_over:
                 break
 
-            sleep(0.2)
+            sleep(self.ROUND_DELAY)
 
-        print(f"""
+        sys.stdout.write(f"""
 The winner is {self.get_winning_suit().value.title()}!!!
-        """)
+        \n\n""")
 
 
 if __name__ == "__main__":
-    rps_game = RockPaperScissor(game_mode=GameMode.TRANSFORM)
+    game = RockPaperScissor()
 
     try:
-        rps_game.play()
+        game.play()
     except KeyboardInterrupt:
         pass

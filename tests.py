@@ -1,9 +1,28 @@
+import signal
+from io import StringIO
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 from parameterized import parameterized
 
 from main import Gesture, GestureSuit, Cell, GameMode, RockPaperScissor
+
+
+def abort_after_timeout(timeout):
+    def decorator(f):
+        def wrapper(*args, **kwargs):
+            def signal_handler(signum, frame):
+                raise OSError(f"Aborted function as it reached {timeout}s")
+
+            signal.signal(signal.SIGALRM, signal_handler)
+            signal.alarm(timeout)
+
+            f(*args, **kwargs)
+
+            signal.alarm(0)
+
+        return wrapper
+    return decorator
 
 
 class GestureTests(TestCase):
@@ -15,9 +34,11 @@ class GestureTests(TestCase):
         for gs1, gs2 in Gesture.SUIT_TO_WEAKER_SUIT.items():
             self.assertTrue(Gesture(gs1) > Gesture(gs2))
 
-    def test_eq(self):
+    def test_equals(self):
         for gs in GestureSuit:
-            self.assertTrue(Gesture(gs) == Gesture(gs))
+            g1 = Gesture(gs)
+            g2 = Gesture(gs)
+            self.assertTrue(g1.equals(g2))
 
     def test_kill(self):
         g = Gesture(GestureSuit.ROCK)
@@ -175,7 +196,7 @@ class CellTests(TestCase):
         incoming_suite = GestureSuit.SCISSOR
         incoming_gesture = Gesture(incoming_suite)
 
-        self.assertEqual(incoming_gesture, cell.gesture)
+        self.assertTrue(incoming_gesture.equals(cell.gesture))
 
         cell._challenge_transform(incoming_gesture)
 
@@ -357,3 +378,113 @@ class RockPaperScissorTests(TestCase):
 
         _get_available_cells_to_move_to.assert_called_once_with(gesture)
         self.assertFalse(run_challenge.called)
+
+    def test_remove_not_alive_gestures(self):
+        game = RockPaperScissor()
+
+        gesture = game.gestures[5]
+        gesture.kill()
+
+        game._remove_not_alive_gestures()
+        self.assertNotIn(gesture, game.gestures)
+
+    @patch.object(RockPaperScissor, "_remove_not_alive_gestures")
+    @patch.object(RockPaperScissor, "_move_gesture")
+    def test_move_gestures(self, _move_gesture, _remove_not_alive_gestures):
+        game = RockPaperScissor()
+
+        gesture = game.gestures[5]
+        gesture.kill()
+
+        game._move_gestures()
+        self.assertFalse(call(gesture) in _move_gesture.call_args_list)
+
+        _remove_not_alive_gestures.assert_called()
+
+    @patch.object(RockPaperScissor, "_move_gestures")
+    @patch.object(RockPaperScissor, "_print_board")
+    def test_play_round(self, _print_board, _move_gestures):
+        game = RockPaperScissor()
+
+        self.assertEqual(0, game.stats["round_number"])
+        game._play_round()
+        self.assertEqual(1, game.stats["round_number"])
+
+        _print_board.assert_called()
+        _move_gestures.assert_called()
+
+    @patch("main.os.name", "posix")
+    @patch("main.os.system")
+    def test_clear_screen_posix(self, os_system):
+        game = RockPaperScissor()
+        game._clear_screen()
+        os_system.assert_called_once_with("clear")
+
+    @patch("main.os.name", "abc")
+    @patch("main.os.system")
+    def test_clear_screen_not_posix(self, os_system):
+        game = RockPaperScissor()
+        game._clear_screen()
+        os_system.assert_called_once_with("cls")
+
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch.object(RockPaperScissor, "_clear_screen")
+    def test_print_board(self, _clear_screen, mock_out):
+        game = RockPaperScissor()
+        game._print_board()
+
+        _clear_screen.assert_called()
+
+        self.assertIn(
+            """
+[=========================]
+[    Rock-Paper-Scissor   ]
+[=========================]
+            """.strip(),
+            mock_out.getvalue()
+        )
+
+    @parameterized.expand([
+        (0, 0, 0, False),
+        (9, 9, 9, False),
+        (9, 9, 0, False),
+        (9, 0, 9, False),
+        (0, 9, 9, False),
+        (9, 0, 0, True),
+        (0, 9, 0, True),
+        (0, 0, 9, True),
+    ])
+    def test_is_game_over(self, remaining_rock, remaining_paper, remaining_scissor, is_game_over):
+        game = RockPaperScissor()
+
+        game.stats[f"remaining_{GestureSuit.ROCK.value}"] = remaining_rock
+        game.stats[f"remaining_{GestureSuit.PAPER.value}"] = remaining_paper
+        game.stats[f"remaining_{GestureSuit.SCISSOR.value}"] = remaining_scissor
+
+        self.assertEqual(game.is_game_over, is_game_over)
+
+    def test_get_winning_suit_game(self):
+        game = RockPaperScissor()
+
+        game.stats[f"remaining_{GestureSuit.ROCK.value}"] = 10
+        game.stats[f"remaining_{GestureSuit.PAPER.value}"] = 10
+        game.stats[f"remaining_{GestureSuit.SCISSOR.value}"] = 10
+
+        with self.assertRaisesRegex(Exception, "The game is not over yet"):
+            game.get_winning_suit()
+
+    def test_get_winning_suit_game_is_not_over(self):
+        game = RockPaperScissor()
+
+        game.stats[f"remaining_{GestureSuit.ROCK.value}"] = 0
+        game.stats[f"remaining_{GestureSuit.PAPER.value}"] = 10
+        game.stats[f"remaining_{GestureSuit.SCISSOR.value}"] = 0
+
+        self.assertEqual(GestureSuit.PAPER, game.get_winning_suit())
+
+    @abort_after_timeout(10)
+    @patch("sys.stdout", new_callable=StringIO)
+    @patch.object(RockPaperScissor, "_clear_screen")
+    def test_integration(self, _clear_screen, mock_out):
+        game = RockPaperScissor(round_delay=0)
+        game.play()
