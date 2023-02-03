@@ -184,3 +184,176 @@ class CellTests(TestCase):
         self.assertEqual(
             game.stats[f"remaining_{GestureSuit.SCISSOR.value}"], game.COUNT_SCISSOR
         )
+
+
+class RockPaperScissorTests(TestCase):
+    @patch("main.random.shuffle")
+    def test_init(self, shuffle):
+        game = RockPaperScissor(
+            height=3,
+            width=5,
+            count_rock=2,
+            count_paper=3,
+            count_scissor=4,
+        )
+        self.assertEqual(15, game.COUNT_CELLS)
+        self.assertEqual(9, game.COUNT_GESTURES)
+
+        r = GestureSuit.ROCK
+        p = GestureSuit.PAPER
+        s = GestureSuit.SCISSOR
+        n = None
+
+        self.assertEqual(
+            [
+                [r, r, p, p, p],
+                [s, s, s, s, n],
+                [n, n, n, n, n],
+            ],
+            [[cell.gesture and cell.gesture.suit for cell in row] for row in game.matrix],
+        )
+
+        self.assertEqual(0, game.stats["round_number"])
+        self.assertEqual(2, game.stats[f"remaining_{GestureSuit.ROCK.value}"])
+        self.assertEqual(3, game.stats[f"remaining_{GestureSuit.PAPER.value}"])
+        self.assertEqual(4, game.stats[f"remaining_{GestureSuit.SCISSOR.value}"])
+
+    def test_get_all_surrounding_cells(self):
+        game = RockPaperScissor()
+
+        # top-left corner
+        self.assertEqual(
+            [
+                game.matrix[0][1],
+                game.matrix[1][0], game.matrix[1][1],
+            ],
+            game._get_all_surrounding_cells(game.matrix[0][0])
+        )
+
+        # top-right corner
+        self.assertEqual(
+            [
+                game.matrix[0][-2],
+                game.matrix[1][-2], game.matrix[1][-1],
+            ],
+            game._get_all_surrounding_cells(game.matrix[0][-1])
+        )
+
+        # bottom-right corner
+        self.assertEqual(
+            [
+                game.matrix[-2][-2], game.matrix[-2][-1],
+                game.matrix[-1][-2],
+            ],
+            game._get_all_surrounding_cells(game.matrix[-1][-1])
+        )
+
+        # bottom-left corner
+        self.assertEqual(
+            [
+                game.matrix[-2][0], game.matrix[-2][1],
+                game.matrix[-1][1],
+            ],
+            game._get_all_surrounding_cells(game.matrix[-1][0])
+        )
+
+        # top side
+        self.assertEqual(
+            [
+                game.matrix[0][4], game.matrix[0][6],
+                game.matrix[1][4], game.matrix[1][5], game.matrix[1][6],
+            ],
+            game._get_all_surrounding_cells(game.matrix[0][5]),
+        )
+
+        # right side
+        self.assertEqual(
+            [
+                game.matrix[4][-2], game.matrix[4][-1],
+                game.matrix[5][-2],
+                game.matrix[6][-2], game.matrix[6][-1],
+            ],
+            game._get_all_surrounding_cells(game.matrix[5][-1])
+        )
+
+        # bottom side
+        self.assertEqual(
+            [
+                game.matrix[-2][4], game.matrix[-2][5], game.matrix[-2][6],
+                game.matrix[-1][4], game.matrix[-1][6],
+            ],
+            game._get_all_surrounding_cells(game.matrix[-1][5])
+        )
+
+        # left side
+        self.assertEqual(
+            [
+                game.matrix[4][0], game.matrix[4][1],
+                game.matrix[5][1],
+                game.matrix[6][0], game.matrix[6][1],
+            ],
+            game._get_all_surrounding_cells(game.matrix[5][0])
+        )
+
+        # Central
+        self.assertEqual(
+            [
+                game.matrix[4][2], game.matrix[4][3], game.matrix[4][4],
+                game.matrix[5][2], game.matrix[5][4],
+                game.matrix[6][2], game.matrix[6][3], game.matrix[6][4],
+            ],
+            game._get_all_surrounding_cells(game.matrix[5][3])
+        )
+
+    @patch.object(RockPaperScissor, "_get_all_surrounding_cells")
+    def test_get_available_cells_to_move_to(self, _get_all_surrounding_cells):
+        game = RockPaperScissor()
+        cell = Cell(game, Gesture(GestureSuit.ROCK))
+
+        c0 = Cell(game)
+        c1 = Cell(game, Gesture(GestureSuit.ROCK))
+        c2 = Cell(game)
+        c3 = Cell(game, Gesture(GestureSuit.SCISSOR))
+        c4 = Cell(game)
+        c5 = Cell(game)
+        c6 = Cell(game, Gesture(GestureSuit.PAPER))
+        c7 = Cell(game, Gesture(GestureSuit.ROCK))
+
+        _get_all_surrounding_cells.return_value = [c0, c1, c2, c3, c4, c5, c6, c7]
+        filtered_cells = game._get_available_cells_to_move_to(cell.gesture)
+
+        self.assertEqual([c0, c2, c3, c4, c5, c6], filtered_cells)
+        _get_all_surrounding_cells.assert_called_once_with(cell)
+
+    @patch("main.random.choice")
+    @patch.object(RockPaperScissor, "_get_available_cells_to_move_to")
+    def test_move_gesture(self, _get_available_cells_to_move_to, random_choice):
+        game = RockPaperScissor()
+
+        c0 = Cell(game)
+        c0.run_challenge = MagicMock()
+
+        c1 = Cell(game, Gesture(GestureSuit.ROCK))
+        c2 = Cell(game)
+        _get_available_cells_to_move_to.return_value = [c0, c1, c2]
+
+        random_choice.side_effect = lambda cells: cells[0]
+
+        gesture = Gesture(GestureSuit.SCISSOR)
+        game._move_gesture(gesture)
+
+        _get_available_cells_to_move_to.assert_called_once_with(gesture)
+        c0.run_challenge.assert_called_once_with(gesture)
+
+    @patch.object(Cell, "run_challenge")
+    @patch.object(RockPaperScissor, "_get_available_cells_to_move_to")
+    def test_move_gesture_no_available_cells(self, _get_available_cells_to_move_to, run_challenge):
+        game = RockPaperScissor()
+
+        _get_available_cells_to_move_to.return_value = []
+
+        gesture = Gesture(GestureSuit.SCISSOR)
+        game._move_gesture(gesture)
+
+        _get_available_cells_to_move_to.assert_called_once_with(gesture)
+        self.assertFalse(run_challenge.called)
