@@ -3,7 +3,7 @@ import random
 import sys
 from enum import Enum
 from time import sleep
-from typing import Self
+from typing import Self  # type: ignore
 
 
 class GestureSuit(Enum):
@@ -23,7 +23,7 @@ class Gesture:
         GestureSuit.SCISSOR: "✂️ ",
     }
 
-    SUIT_TO_WEAKER_SUIT: [GestureSuit, GestureSuit] = {
+    SUIT_TO_WEAKER_SUIT: dict[GestureSuit, GestureSuit] = {
         GestureSuit.ROCK: GestureSuit.SCISSOR,
         GestureSuit.PAPER: GestureSuit.ROCK,
         GestureSuit.SCISSOR: GestureSuit.PAPER,
@@ -31,17 +31,17 @@ class Gesture:
 
     def __init__(self, suit: GestureSuit):
         self.suit: GestureSuit = suit
-        self.cell: Cell | None = None
+        self.cell: Cell
         self.alive = True
 
     def __str__(self) -> str:
         return self.SUIT_TO_EMOJI[self.suit]
 
-    def __gt__(self, other: Self):
-        return self.SUIT_TO_WEAKER_SUIT[self.suit] == other.suit
+    def __gt__(self, other: Self):  # type: ignore
+        return self.SUIT_TO_WEAKER_SUIT[self.suit] == other.suit  # type: ignore
 
-    def equals(self, other: Self):
-        return self.suit == other.suit
+    def equals(self, other: Self):  # type: ignore
+        return self.suit == other.suit  # type: ignore
 
     def transform(self, suit: GestureSuit):
         self.suit = suit
@@ -52,8 +52,8 @@ class Cell:
 
     def __init__(self, game: "RockPaperScissor", gesture: Gesture | None = None):
         self.game = game
-        self.m = None  # y coordinate
-        self.n = None  # x coordinate
+        self.m: int  # y coordinate
+        self.n: int  # x coordinate
 
         self.gesture: Gesture | None = gesture
 
@@ -77,6 +77,9 @@ class Cell:
         self.gesture = None
 
     def _challenge_transform(self, incoming: Gesture):
+        if self.gesture is None:
+            raise Exception("This cell does not have a gesture")
+
         if self.gesture > incoming:
             self.stats[f"remaining_{incoming.suit.value}"] -= 1
             incoming.transform(self.gesture.suit)
