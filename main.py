@@ -13,15 +13,14 @@ class GestureSuit(Enum):
 
 
 class GameMode(Enum):
-    KILL = "kill"
     TRANSFORM = "transform"
 
 
 class Gesture:
     SUIT_TO_EMOJI = {
-        GestureSuit.ROCK: "🪨",
-        GestureSuit.PAPER: "📃",
-        GestureSuit.SCISSOR: "✂️",
+        GestureSuit.ROCK: "🪨".strip(),
+        GestureSuit.PAPER: "📃".strip(),
+        GestureSuit.SCISSOR: "✂️ ",
     }
 
     SUIT_TO_WEAKER_SUIT: [GestureSuit, GestureSuit] = {
@@ -43,10 +42,6 @@ class Gesture:
 
     def equals(self, other: Self):
         return self.suit == other.suit
-
-    def kill(self):
-        self.alive = False
-        self.cell = None
 
     def transform(self, suit: GestureSuit):
         self.suit = suit
@@ -82,18 +77,6 @@ class Cell:
     def remove_gesture(self):
         self.gesture.cell = None
         self.gesture = None
-
-    def _challenge_kill(self, incoming: Gesture):
-        incoming.cell.remove_gesture()
-
-        if self.gesture > incoming:
-            incoming.kill()
-            self.stats[f"remaining_{incoming.suit.value}"] -= 1
-
-        else:
-            self.gesture.kill()
-            self.stats[f"remaining_{self.gesture.suit.value}"] -= 1
-            self._assign_gesture(incoming)
 
     def _challenge_transform(self, incoming: Gesture):
         if self.gesture > incoming:
@@ -214,19 +197,11 @@ class RockPaperScissor:
         new_cell = random.choice(surrounding_cells)
         new_cell.run_challenge(gesture)
 
-    def _remove_not_alive_gestures(self):
-        self.gestures = [g for g in self.gestures if g.alive]
-
     def _move_gestures(self):
         random.shuffle(self.gestures)
 
         for gesture in self.gestures:
-            # gesture objs can become not alive while in this loop
-            if not gesture.alive:
-                continue
             self._move_gesture(gesture)
-
-        self._remove_not_alive_gestures()
 
     def _play_round(self):
         self.stats["round_number"] += 1

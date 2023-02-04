@@ -40,15 +40,6 @@ class GestureTests(TestCase):
             g2 = Gesture(gs)
             self.assertTrue(g1.equals(g2))
 
-    def test_kill(self):
-        g = Gesture(GestureSuit.ROCK)
-        g.cell = Cell(MagicMock())
-
-        g.kill()
-
-        self.assertFalse(g.alive)
-        self.assertIsNone(g.cell)
-
     def test_transform(self):
         g = Gesture(GestureSuit.ROCK)
         g.transform(GestureSuit.PAPER)
@@ -104,7 +95,6 @@ class CellTests(TestCase):
 
     @parameterized.expand([
         ("_challenge_transform", GameMode.TRANSFORM),
-        ("_challenge_kill", GameMode.KILL),
     ])
     def test_get_challenge_function(self, function_name, mode):
         game = MagicMock(GAME_MODE=mode)
@@ -379,27 +369,11 @@ class RockPaperScissorTests(TestCase):
         _get_available_cells_to_move_to.assert_called_once_with(gesture)
         self.assertFalse(run_challenge.called)
 
-    def test_remove_not_alive_gestures(self):
-        game = RockPaperScissor()
-
-        gesture = game.gestures[5]
-        gesture.kill()
-
-        game._remove_not_alive_gestures()
-        self.assertNotIn(gesture, game.gestures)
-
-    @patch.object(RockPaperScissor, "_remove_not_alive_gestures")
     @patch.object(RockPaperScissor, "_move_gesture")
-    def test_move_gestures(self, _move_gesture, _remove_not_alive_gestures):
+    def test_move_gestures(self, _move_gesture):
         game = RockPaperScissor()
-
-        gesture = game.gestures[5]
-        gesture.kill()
-
         game._move_gestures()
-        self.assertFalse(call(gesture) in _move_gesture.call_args_list)
-
-        _remove_not_alive_gestures.assert_called()
+        self.assertEqual(len(game.gestures), len(_move_gesture.call_args_list))
 
     @patch.object(RockPaperScissor, "_move_gestures")
     @patch.object(RockPaperScissor, "_print_board")
