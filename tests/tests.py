@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from parameterized import parameterized
 
-from game.main import Gesture, GestureSuit, Cell, GameMode, RockPaperScissor
+from game.main import Cell, GameMode, Gesture, GestureSuit, RockPaperScissor
 
 
 def abort_after_timeout(timeout):
