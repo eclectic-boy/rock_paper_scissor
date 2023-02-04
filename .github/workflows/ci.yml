@@ -1,5 +1,5 @@
 name: CI
-run-name: CI triggered by ${{ github.actor }}
+run-name: Build triggered by ${{ github.actor }}
 on: [push]
 jobs:
   Explore-GitHub-Actions:
