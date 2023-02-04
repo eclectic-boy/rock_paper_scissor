@@ -53,3 +53,15 @@ And you can run the tests:
 ```bash
 make test
 ```
+
+## Contribution
+
+If you wanted to contribute, please install the requirements first:
+```bash
+pip install -r requirements.txt
+```
+
+And also the pre-commit hooks which will help you polish the code:
+```bash
+pre-commit install
+```
