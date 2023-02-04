@@ -48,9 +48,7 @@ class Gesture:
 
 
 class Cell:
-    GAME_MODE_TO_FUNCTION_NAME = {
-        item: f"_challenge_{item.value}" for item in GameMode
-    }
+    GAME_MODE_TO_FUNCTION_NAME = {item: f"_challenge_{item.value}" for item in GameMode}
 
     def __init__(self, game: "RockPaperScissor", gesture: Gesture | None = None):
         self.game = game
@@ -143,13 +141,11 @@ class RockPaperScissor:
         }
 
     def _init_gestures(self):
-        self.gestures = [
-            Gesture(GestureSuit.ROCK) for _ in range(self.COUNT_ROCK)
-        ] + [
-            Gesture(GestureSuit.PAPER) for _ in range(self.COUNT_PAPER)
-        ] + [
-            Gesture(GestureSuit.SCISSOR) for _ in range(self.COUNT_SCISSOR)
-        ]
+        self.gestures = (
+            [Gesture(GestureSuit.ROCK) for _ in range(self.COUNT_ROCK)]
+            + [Gesture(GestureSuit.PAPER) for _ in range(self.COUNT_PAPER)]
+            + [Gesture(GestureSuit.SCISSOR) for _ in range(self.COUNT_SCISSOR)]
+        )
 
     def _init_matrix(self):
         cells = [Cell(self, gesture) for gesture in self.gestures]
@@ -173,19 +169,28 @@ class RockPaperScissor:
         n = cell.n
 
         coords_list = (
-            (m - 1, n - 1), (m - 1, n), (m - 1, n + 1),
-            (m, n - 1), (m, n + 1),
-            (m + 1, n - 1), (m + 1, n), (m + 1, n + 1),
+            (m - 1, n - 1),
+            (m - 1, n),
+            (m - 1, n + 1),
+            (m, n - 1),
+            (m, n + 1),
+            (m + 1, n - 1),
+            (m + 1, n),
+            (m + 1, n + 1),
         )
 
         return [
-            self.matrix[i][j] for i, j in coords_list if 0 <= i < self.M and 0 <= j < self.N
+            self.matrix[i][j]
+            for i, j in coords_list
+            if 0 <= i < self.M and 0 <= j < self.N
         ]
 
     def _get_available_cells_to_move_to(self, gesture: Gesture):
         all_surrounding_cells = self._get_all_surrounding_cells(gesture.cell)
         filtered_cells = [
-            c for c in all_surrounding_cells if not c.gesture or not c.gesture.equals(gesture)
+            c
+            for c in all_surrounding_cells
+            if not c.gesture or not c.gesture.equals(gesture)
         ]
         return filtered_cells
 
@@ -219,7 +224,8 @@ class RockPaperScissor:
 
     def _print_board(self):
         self._clear_screen()
-        sys.stdout.write(f"""
+        sys.stdout.write(
+            f"""
 [=========================]
 [    Rock-Paper-Scissor   ]
 [=========================]
@@ -227,7 +233,8 @@ class RockPaperScissor:
 Mode: {self.GAME_MODE.value.title()}
 Round: {self.stats["round_number"] or "-":<4}
 {GestureSuit.ROCK.value.title()}: {self.stats[f"remaining_{GestureSuit.ROCK.value}"]:<3}   {GestureSuit.PAPER.value.title()}: {self.stats[f"remaining_{GestureSuit.PAPER.value}"]:<3}   {GestureSuit.SCISSOR.value.title()}: {self.stats[f"remaining_{GestureSuit.SCISSOR.value}"]:<3}
-        \n""")
+        \n"""
+        )
 
         for row in self.matrix:
             sys.stdout.write("|" + "·".join(f"{str(cell):^0}" for cell in row) + "|\n")
@@ -258,9 +265,11 @@ Round: {self.stats["round_number"] or "-":<4}
 
             sleep(self.ROUND_DELAY)
 
-        sys.stdout.write(f"""
+        sys.stdout.write(
+            f"""
 The winner is {self.get_winning_suit().value.title()}!!!
-        \n\n""")
+        \n\n"""
+        )
 
 
 if __name__ == "__main__":

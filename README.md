@@ -4,7 +4,7 @@
 
 During the festive holidays 2022 I was scrolling on Insta and I bumped into [this reel](https://www.instagram.com/reel/CmK8aKQDvTm/?igshid=YmMyMTA2M2Y=). Entertaining! It definitely tickled my engineering mind and I thought I could try to reverse-engineer its logic and give a go at trying to reproduce the whole game. Here is my attempt!
 
-![](rps.gif)
+![](docs/rps.gif)
 
 ## Basic Rules
 
