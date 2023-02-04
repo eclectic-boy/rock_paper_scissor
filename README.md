@@ -2,7 +2,11 @@
 
 [![CI](https://github.com/eclectic-boy/rock_paper_scissors/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/eclectic-boy/rock_paper_scissors/actions/workflows/ci.yml)
 
-During the festive holidays 2022 I was scrolling on Insta and I bumped into [this reel](https://www.instagram.com/reel/CmK8aKQDvTm/?igshid=YmMyMTA2M2Y=). Entertaining! It definitely tickled my engineering mind and I thought I could try to reverse-engineer its logic and give a go at trying to reproduce the whole game. Here is my attempt!
+During the festive holidays 2022 I was scrolling on Insta and I bumped into [this reel](https://www.instagram.com/reel/CmK8aKQDvTm/?igshid=YmMyMTA2M2Y=) showing a Rock Paper Scissor war game.
+
+Interesting :eyes:!
+
+It definitely tickled my engineering mind and I thought I could try to do some reverse engineering and try to recreate the whole game with Python :snake: Here is my attempt!
 
 ![](docs/rps.gif)
 
