@@ -1,11 +1,11 @@
 import signal
 from io import StringIO
 from unittest import TestCase
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
-from parameterized import parameterized
+from parameterized import parameterized  # type: ignore
 
-from main import Gesture, GestureSuit, Cell, GameMode, RockPaperScissor
+from game.main import Cell, GameMode, Gesture, GestureSuit, RockPaperScissor
 
 
 def abort_after_timeout(timeout):
@@ -22,6 +22,7 @@ def abort_after_timeout(timeout):
             signal.alarm(0)
 
         return wrapper
+
     return decorator
 
 
@@ -93,9 +94,11 @@ class CellTests(TestCase):
         self.assertIsNone(cell.gesture)
         self.assertIsNone(g.cell)
 
-    @parameterized.expand([
-        ("_challenge_transform", GameMode.TRANSFORM),
-    ])
+    @parameterized.expand(
+        [
+            ("_challenge_transform", GameMode.TRANSFORM),
+        ]
+    )
     def test_get_challenge_function(self, function_name, mode):
         game = MagicMock(GAME_MODE=mode)
         cell = Cell(game)
@@ -198,7 +201,7 @@ class CellTests(TestCase):
 
 
 class RockPaperScissorTests(TestCase):
-    @patch("main.random.shuffle")
+    @patch("game.main.random.shuffle")
     def test_init(self, shuffle):
         game = RockPaperScissor(
             height=3,
@@ -221,7 +224,10 @@ class RockPaperScissorTests(TestCase):
                 [s, s, s, s, n],
                 [n, n, n, n, n],
             ],
-            [[cell.gesture and cell.gesture.suit for cell in row] for row in game.matrix],
+            [
+                [cell.gesture and cell.gesture.suit for cell in row]
+                for row in game.matrix
+            ],
         )
 
         self.assertEqual(0, game.stats["round_number"])
@@ -236,43 +242,50 @@ class RockPaperScissorTests(TestCase):
         self.assertEqual(
             [
                 game.matrix[0][1],
-                game.matrix[1][0], game.matrix[1][1],
+                game.matrix[1][0],
+                game.matrix[1][1],
             ],
-            game._get_all_surrounding_cells(game.matrix[0][0])
+            game._get_all_surrounding_cells(game.matrix[0][0]),
         )
 
         # top-right corner
         self.assertEqual(
             [
                 game.matrix[0][-2],
-                game.matrix[1][-2], game.matrix[1][-1],
+                game.matrix[1][-2],
+                game.matrix[1][-1],
             ],
-            game._get_all_surrounding_cells(game.matrix[0][-1])
+            game._get_all_surrounding_cells(game.matrix[0][-1]),
         )
 
         # bottom-right corner
         self.assertEqual(
             [
-                game.matrix[-2][-2], game.matrix[-2][-1],
+                game.matrix[-2][-2],
+                game.matrix[-2][-1],
                 game.matrix[-1][-2],
             ],
-            game._get_all_surrounding_cells(game.matrix[-1][-1])
+            game._get_all_surrounding_cells(game.matrix[-1][-1]),
         )
 
         # bottom-left corner
         self.assertEqual(
             [
-                game.matrix[-2][0], game.matrix[-2][1],
+                game.matrix[-2][0],
+                game.matrix[-2][1],
                 game.matrix[-1][1],
             ],
-            game._get_all_surrounding_cells(game.matrix[-1][0])
+            game._get_all_surrounding_cells(game.matrix[-1][0]),
         )
 
         # top side
         self.assertEqual(
             [
-                game.matrix[0][4], game.matrix[0][6],
-                game.matrix[1][4], game.matrix[1][5], game.matrix[1][6],
+                game.matrix[0][4],
+                game.matrix[0][6],
+                game.matrix[1][4],
+                game.matrix[1][5],
+                game.matrix[1][6],
             ],
             game._get_all_surrounding_cells(game.matrix[0][5]),
         )
@@ -280,40 +293,52 @@ class RockPaperScissorTests(TestCase):
         # right side
         self.assertEqual(
             [
-                game.matrix[4][-2], game.matrix[4][-1],
+                game.matrix[4][-2],
+                game.matrix[4][-1],
                 game.matrix[5][-2],
-                game.matrix[6][-2], game.matrix[6][-1],
+                game.matrix[6][-2],
+                game.matrix[6][-1],
             ],
-            game._get_all_surrounding_cells(game.matrix[5][-1])
+            game._get_all_surrounding_cells(game.matrix[5][-1]),
         )
 
         # bottom side
         self.assertEqual(
             [
-                game.matrix[-2][4], game.matrix[-2][5], game.matrix[-2][6],
-                game.matrix[-1][4], game.matrix[-1][6],
+                game.matrix[-2][4],
+                game.matrix[-2][5],
+                game.matrix[-2][6],
+                game.matrix[-1][4],
+                game.matrix[-1][6],
             ],
-            game._get_all_surrounding_cells(game.matrix[-1][5])
+            game._get_all_surrounding_cells(game.matrix[-1][5]),
         )
 
         # left side
         self.assertEqual(
             [
-                game.matrix[4][0], game.matrix[4][1],
+                game.matrix[4][0],
+                game.matrix[4][1],
                 game.matrix[5][1],
-                game.matrix[6][0], game.matrix[6][1],
+                game.matrix[6][0],
+                game.matrix[6][1],
             ],
-            game._get_all_surrounding_cells(game.matrix[5][0])
+            game._get_all_surrounding_cells(game.matrix[5][0]),
         )
 
         # Central
         self.assertEqual(
             [
-                game.matrix[4][2], game.matrix[4][3], game.matrix[4][4],
-                game.matrix[5][2], game.matrix[5][4],
-                game.matrix[6][2], game.matrix[6][3], game.matrix[6][4],
+                game.matrix[4][2],
+                game.matrix[4][3],
+                game.matrix[4][4],
+                game.matrix[5][2],
+                game.matrix[5][4],
+                game.matrix[6][2],
+                game.matrix[6][3],
+                game.matrix[6][4],
             ],
-            game._get_all_surrounding_cells(game.matrix[5][3])
+            game._get_all_surrounding_cells(game.matrix[5][3]),
         )
 
     @patch.object(RockPaperScissor, "_get_all_surrounding_cells")
@@ -336,7 +361,7 @@ class RockPaperScissorTests(TestCase):
         self.assertEqual([c0, c2, c3, c4, c5, c6], filtered_cells)
         _get_all_surrounding_cells.assert_called_once_with(cell)
 
-    @patch("main.random.choice")
+    @patch("game.main.random.choice")
     @patch.object(RockPaperScissor, "_get_available_cells_to_move_to")
     def test_move_gesture(self, _get_available_cells_to_move_to, random_choice):
         game = RockPaperScissor()
@@ -358,7 +383,9 @@ class RockPaperScissorTests(TestCase):
 
     @patch.object(Cell, "run_challenge")
     @patch.object(RockPaperScissor, "_get_available_cells_to_move_to")
-    def test_move_gesture_no_available_cells(self, _get_available_cells_to_move_to, run_challenge):
+    def test_move_gesture_no_available_cells(
+        self, _get_available_cells_to_move_to, run_challenge
+    ):
         game = RockPaperScissor()
 
         _get_available_cells_to_move_to.return_value = []
@@ -387,15 +414,15 @@ class RockPaperScissorTests(TestCase):
         _print_board.assert_called()
         _move_gestures.assert_called()
 
-    @patch("main.os.name", "posix")
-    @patch("main.os.system")
+    @patch("game.main.os.name", "posix")
+    @patch("game.main.os.system")
     def test_clear_screen_posix(self, os_system):
         game = RockPaperScissor()
         game._clear_screen()
         os_system.assert_called_once_with("clear")
 
-    @patch("main.os.name", "abc")
-    @patch("main.os.system")
+    @patch("game.main.os.name", "abc")
+    @patch("game.main.os.system")
     def test_clear_screen_not_posix(self, os_system):
         game = RockPaperScissor()
         game._clear_screen()
@@ -415,20 +442,24 @@ class RockPaperScissorTests(TestCase):
 [    Rock-Paper-Scissor   ]
 [=========================]
             """.strip(),
-            mock_out.getvalue()
+            mock_out.getvalue(),
         )
 
-    @parameterized.expand([
-        (0, 0, 0, False),
-        (9, 9, 9, False),
-        (9, 9, 0, False),
-        (9, 0, 9, False),
-        (0, 9, 9, False),
-        (9, 0, 0, True),
-        (0, 9, 0, True),
-        (0, 0, 9, True),
-    ])
-    def test_is_game_over(self, remaining_rock, remaining_paper, remaining_scissor, is_game_over):
+    @parameterized.expand(
+        [
+            (0, 0, 0, False),
+            (9, 9, 9, False),
+            (9, 9, 0, False),
+            (9, 0, 9, False),
+            (0, 9, 9, False),
+            (9, 0, 0, True),
+            (0, 9, 0, True),
+            (0, 0, 9, True),
+        ]
+    )
+    def test_is_game_over(
+        self, remaining_rock, remaining_paper, remaining_scissor, is_game_over
+    ):
         game = RockPaperScissor()
 
         game.stats[f"remaining_{GestureSuit.ROCK.value}"] = remaining_rock
