@@ -21,7 +21,7 @@ class Gesture:
     SUIT_TO_EMOJI = {
         GestureSuit.ROCK: "🪨",
         GestureSuit.PAPER: "📃",
-        GestureSuit.SCISSOR: "🪚",
+        GestureSuit.SCISSOR: "✂️",
     }
 
     SUIT_TO_WEAKER_SUIT: [GestureSuit, GestureSuit] = {
