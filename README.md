@@ -1,6 +1,6 @@
 # Rock Paper Scissor war game
 
-[![CI](https://github.com/eclectic-boy/rock_paper_scissors/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/eclectic-boy/rock_paper_scissors/actions/workflows/ci.yml)
+[![CI](https://github.com/eclectic-boy/rock_paper_scissor/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/eclectic-boy/rock_paper_scissor/actions/workflows/ci.yml)
 
 During the festive holidays 2022 I was scrolling on Insta and I bumped into [this reel](https://www.instagram.com/reel/CmK8aKQDvTm/?igshid=YmMyMTA2M2Y=) showing a Rock Paper Scissor war game.
 
@@ -27,8 +27,8 @@ Make sure you have Python3 on your machine.
 
 Clone the repo and change to the root of the project:
 ```bash
-git clone git@github.com:eclectic-boy/rock_paper_scissors.git
-cd rock_paper_scissors
+git clone git@github.com:eclectic-boy/rock_paper_scissor.git
+cd rock_paper_scissor
 ```
 
 Create a Python 3 virtual environment and activate it:
